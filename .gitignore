@@ -1,0 +1,41 @@
+#Default C++ gitignore as used but Python code will be present as well, will need to account for that
+*.cache.data-00000-of-00001
+*.index
+*.jpg
+*.v2
+*.h5
+*.tflite
+*.json
+#Default
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
