@@ -1,4 +1,4 @@
-<h1>Project description<h1>
+<h1>Project description</h1>
 
 
 Bachelor Thesis: Lane Detection on microcontrollers: Raspberry Pi Pico 0
@@ -15,7 +15,7 @@ You can also find tinyML solutions under the same premise as this project at:
 _No students were harmed in the completion of this project_	
 
 
-<h1>Structure<h1>
+<h1>Structure</h1>
 
 The code is divided between the Machine Learning approach and a Image processing Based approach
 
@@ -31,7 +31,7 @@ I apologize as a lot of the references are to be hardwired but I will give a sim
 Additional Information on how to set up each workflow and running instructions can be found in the respective ReadME's for every section
 
 
-<h1>Results<h1>
+<h1>Results</h1>
 
 I'm very proud to announce I was able to fit these models on the pico:
 - U-net 40*40
