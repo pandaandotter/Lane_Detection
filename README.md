@@ -1,7 +1,10 @@
 # Lane_Detection
+
 <h1>Project description<h1>
 
+
 Bachelor Thesis: Lane Detection on microcontrollers: Raspberry Pi Pico 0
+
 Goal of the project is to create lane finding solutions that can run on limited hardware.
 That is why the Raspberry Pi Pico 0/2 were selected. The constraints therefore are 264KB/512KB of RAM.
 Disclaimer this project focuses on POV detection and does not tackle unwarping of results, 
