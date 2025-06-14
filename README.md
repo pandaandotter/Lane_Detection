@@ -15,12 +15,10 @@ _No students were harmed in the completion of this project_
 
 <h1>Structure<h1>
 
-
 The code is divided between the Machine Learning approach and a Image processing Based approach
 
 You can find the ML approach and details in /ML
 You can find the IP approach and details in /IP
-
 Evaluation code can be found in /Evaluation
 
 License forbids me to share the datasets of BDD100K and TUSIMPLE so here are the download links:
@@ -28,6 +26,16 @@ The preprocessing code can be found in the /Dataset folder and will be accompani
 
 I apologize as a lot of the references are to be hardwired but I will give a simple guide as to how to link them
 
-Additional Information can be found in the respective ReadME's for every section
+Additional Information on how to set up each workflow and running instructions can be found in the respective ReadME's for every section
+
+
+<h1>Results<h1>
+
+I'm very proud to announce I was able to fit:
+- U-net 40*40
+- 
+- Hough transform based code on the 
+
+
 
 
