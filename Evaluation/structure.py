@@ -10,11 +10,18 @@ def train(modelName, type, model_size, train_set, val_set):
 #def preprocess(img, mode):
 #    a=1
 def predict(model_loc, modelName, img):
-    #return loader((2,model_size,modelName,type)) # TODO: insert way to include
     if modelName == "U-net":   #TODO: insert UFDL/
-        return model.predict(img)[0, :, :, 0]  # (40, 40) #U-net
+        tracemalloc.clear_traces()
+        tracemalloc.start()  # ram_measure_start()
+        prediciton = model.predict(img)[0, :, :, 0]  # (40, 40) #U-net
+        current, peak = tracemalloc.get_traced_memory()
+        return prediciton, (current , peak)
+
     if modelName == "UFDL":
+        tracemalloc.clear_traces()
+        tracemalloc.start()  # ram_measure_start()
         outputs = model.predict(img)
+        current, peak = tracemalloc.get_traced_memory()
         if isinstance(outputs, list):
             lane_pos = outputs[0]
             lane_exist = outputs[1]
@@ -23,18 +30,13 @@ def predict(model_loc, modelName, img):
             lane_exist = outputs["lane_exist"]
         else:
             raise TypeError(f"Unexpected model output type: {type(outputs)}")
-        # Get the most likely bin index per row
+        # get the most likely bin index per row
         presence = np.array(lane_exist[0]).flatten()
         col_bins = np.argmax(lane_pos[0], axis=-1)
 
         counter = collections.Counter(np.atleast_1d(col_bins))
-        return presence, col_bins
 
-    # Get the most likely bin index per row
-    presence = np.array(lane_exist[0]).flatten()
-    col_bins = np.argmax(lane_pos[0], axis=-1)
-
-    counter = collections.Counter(np.atleast_1d(col_bins))
+        return (presence, col_bins), (current , peak)
 
 def accuracy(prediciton, label):
     return "bad", "badder" # TODO: evaluate accurecy
@@ -52,11 +54,8 @@ for modelName in models:
             model = train(modelName, type, train_set, val_set) # TODO : make code work with custom train set and val_set
             for img, label in train_set:
                 #preprocess(img, type) # TODO: or not because it's already done in the databese creation? is considered cheating?
-                tracemalloc.clear_traces()
-                tracemalloc.start()#ram_measure_start()
-                prediciton = predict(model, img)
-                current, peak = tracemalloc.get_traced_memory()#res_ram = ram_measure_end()
+
+                prediciton, ram = predict(model, img, modelName)
+
                 TP,FN = accuracy(prediciton, label)
                 curve_acc = curve_accuracy(prediciton, label)
-
-
