@@ -1,5 +1,3 @@
-# Lane_Detection
-
 <h1>Project description<h1>
 
 
