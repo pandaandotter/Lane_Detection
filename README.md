@@ -16,6 +16,8 @@ _No students were harmed in the completion of this project_
 
 
 <h1>Structure</h1>
+Disclaimer: the code had to change a lot to be compatible with the evaluation pipeline, a lot of work was done to 
+Work to unify this repository will be completed soon, _this might need to wait until after end of thesis and summer_
 
 The code is divided between the Machine Learning approach and a Image processing Based approach
 

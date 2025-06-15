@@ -6,6 +6,10 @@
 *.h5
 *.tflite
 *.json
+# python environement
+.venv/
+*__pycache__/
+
 #Default
 # Prerequisites
 *.d

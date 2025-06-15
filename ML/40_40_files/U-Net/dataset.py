@@ -129,7 +129,7 @@ def create_dataset40(processing_mode: str, batch_size=8, DB_location:str = None)
         image_dir = path / "resized_images"
         label_dir = path  / "resized_labels"
 
-    loader_fn = make_loader_fn(processing_mode, image_dir, label_dir)
+    loader_fn = make_loader_fn(processing_mode, image_dir.__str__(), label_dir.__str__())
     img_files = sorted([
         os.path.join(image_dir, fname)
         for fname in os.listdir(image_dir)

@@ -121,13 +121,17 @@ def lr_schedule(epoch, lr):
         return lr * 0.01
 
 
-def train(processing_mode: str):
+def train(processing_mode: str, t_set = None, val_set = None):
     print(f"Training for mode: {processing_mode}")
-    dataset = load_dataset(processing_mode)
-    dataset_size = dataset.cardinality().numpy()
-    train_size = int(dataset_size * 0.9)
-    train_ds = dataset.take(train_size)
-    val_ds = dataset.skip(train_size)
+    if t_set is None:
+        dataset = load_dataset(processing_mode)
+        dataset_size = dataset.cardinality().numpy()
+        train_size = int(dataset_size * 0.9)
+        train_ds = dataset.take(train_size)
+        val_ds = dataset.skip(train_size)
+    else:
+        train_ds = t_set
+        val_ds = val_set
 
     model = build_grid_lane_model(processing_mode)
     #model = apply_pruning(model)
@@ -160,18 +164,20 @@ def train(processing_mode: str):
     model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=50,  #originally 120... usually takes 75
+        epochs=120,  #originally 120... usually takes 75
         callbacks=callbacks
     )
 
-    model = tfmot.sparsity.keras.strip_pruning(model)
-    save_path = f'80_80_files/UFDL/models/UFDL_{processing_mode.lower()}.h5'
-    model.save(save_path)
-    print(f"Pruned model saved to: {save_path}")
+    #model = tfmot.sparsity.keras.strip_pruning(model)
+    if t_set is None:
+        save_path = f'80_80_files/UFDL/models/UFDL_{processing_mode.lower()}.h5'
+        model.save(save_path)
+        print(f"Pruned model saved to: {save_path}")
+    return model
 
 
-def main(params):
-    train(params)
+def main(params, t_set = None, val_set = None ):
+    return train(params, t_set, val_set)
 
 
 

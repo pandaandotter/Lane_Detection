@@ -93,16 +93,18 @@ def save_model(model, mode: str):
     print(f"Model saved to: {model_path.resolve()}")
 
 
-def main(processing_mode: str):
+def main(processing_mode: str, t_set = None, val_set = None):
     print(f" Starting training with mode: {processing_mode}")
 
-    dataset, _ = load_dataset(processing_mode)
-    dataset_size = sum(1 for _ in dataset)
-    train_size = int(0.9 * dataset_size)
-    train_dataset = dataset.take(train_size)
-    val_dataset = dataset.skip(train_size)
-
-    print(f"Dataset size: {dataset_size * 8} samples ({train_size * 8} train, {(dataset_size - train_size) * 8} val)")
+    if t_set is None:
+        dataset = load_dataset(processing_mode)
+        dataset_size = dataset.cardinality().numpy()
+        train_size = int(dataset_size * 0.9)
+        train_ds = dataset.take(train_size)
+        val_ds = dataset.skip(train_size)
+    else:
+        train_ds = t_set
+        val_ds = val_set
 
     model = build_model()
     pruning_params = {
@@ -116,9 +118,10 @@ def main(processing_mode: str):
     pruned_model = tfmot.sparsity.keras.prune_low_magnitude(model, **pruning_params)
     pruned_model.compile(optimizer='adam', loss=dice_loss, metrics=['accuracy'])
 
-    history = train_model(pruned_model, train_dataset, val_dataset, get_callbacks())
+    history = train_model(pruned_model, train_ds, val_ds, get_callbacks())
     print(f"Training stopped after {len(history.history['loss'])} epochs")
 
-    save_model(pruned_model, processing_mode)
-
+    if t_set is None:
+        save_model(pruned_model, processing_mode)
     return pruned_model
+
