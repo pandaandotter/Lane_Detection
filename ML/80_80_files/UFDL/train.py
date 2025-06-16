@@ -30,10 +30,12 @@ def masked_sparse_categorical_crossentropy(y_true, y_pred):
 
 
 # ---------- CoordConv ----------
+"""
 def add_coord_channels(x):
     batch_size = tf.shape(x)[0]
-    height, width = x.shape[1], x.shape[2]
-
+    #height, width = x.shape[1], x.shape[2]
+    shape = tf.shape(x)
+    height, width = shape[1], shape[2]
     row_coords = tf.linspace(0.0, 1.0, height)
     col_coords = tf.linspace(0.0, 1.0, width)
 
@@ -45,6 +47,34 @@ def add_coord_channels(x):
 
     coords = tf.concat([row_channel, col_channel], axis=-1)
     return tf.concat([x, coords], axis=-1)
+"""
+def add_coord_channels(x):
+    shape = tf.shape(x)
+    batch_size, height, width = shape[0], shape[1], shape[2]
+    in_channels = tf.shape(x)[-1]
+
+    # Limit input to max 2 channels
+    max_input_channels = 2
+    x = x[..., :max_input_channels]  # Crop excess channels if needed
+
+    # Generate coordinate channels
+    row_coords = tf.linspace(0.0, 1.0, tf.cast(height, tf.int32))
+    col_coords = tf.linspace(0.0, 1.0, tf.cast(width, tf.int32))
+
+    row_channel = tf.reshape(row_coords, (height, 1))
+    row_channel = tf.tile(row_channel, [1, width])
+    row_channel = tf.expand_dims(row_channel, axis=-1)
+
+    col_channel = tf.reshape(col_coords, (1, width))
+    col_channel = tf.tile(col_channel, [height, 1])
+    col_channel = tf.expand_dims(col_channel, axis=-1)
+
+    coords = tf.concat([row_channel, col_channel], axis=-1)  # (H, W, 2)
+    coords = tf.expand_dims(coords, axis=0)                  # (1, H, W, 2)
+    coords = tf.tile(coords, [batch_size, 1, 1, 1])           # (B, H, W, 2)
+
+    # Concatenate input (now max 2 channels) + coord channels
+    return tf.concat([x, coords], axis=-1)                   # (B, H, W, 3 or 4)
 
 
 def build_grid_lane_model(processing_mode):
@@ -130,8 +160,8 @@ def train(processing_mode: str, t_set = None, val_set = None):
         train_ds = dataset.take(train_size)
         val_ds = dataset.skip(train_size)
     else:
-        train_ds = t_set
-        val_ds = val_set
+        train_ds = t_set.take(3)
+        val_ds = val_set.take(1)
 
     model = build_grid_lane_model(processing_mode)
     #model = apply_pruning(model)

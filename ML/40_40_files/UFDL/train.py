@@ -30,7 +30,7 @@ def masked_sparse_categorical_crossentropy(y_true, y_pred):
 
 
 # ---------- CoordConv ----------
-def add_coord_channels(x):
+"""def add_coord_channels(x):
     batch_size = tf.shape(x)[0]
     height, width = x.shape[1], x.shape[2]
 
@@ -45,6 +45,32 @@ def add_coord_channels(x):
 
     coords = tf.concat([row_channel, col_channel], axis=-1)
     return tf.concat([x, coords], axis=-1)
+"""
+def add_coord_channels(x):
+    shape = tf.shape(x)
+    batch_size, height, width = shape[0], shape[1], shape[2]
+
+    # Force to 1 channel max if needed
+    x = x[..., :1]  # Keep only the first input channel (e.g., grayscale)
+
+    row_coords = tf.linspace(0.0, 1.0, tf.cast(height, tf.int32))
+    col_coords = tf.linspace(0.0, 1.0, tf.cast(width, tf.int32))
+
+    row_channel = tf.reshape(row_coords, (height, 1))
+    row_channel = tf.tile(row_channel, [1, width])
+    row_channel = tf.expand_dims(row_channel, axis=-1)
+
+    col_channel = tf.reshape(col_coords, (1, width))
+    col_channel = tf.tile(col_channel, [height, 1])
+    col_channel = tf.expand_dims(col_channel, axis=-1)
+
+    coords = tf.concat([row_channel, col_channel], axis=-1)  # (H, W, 2)
+    coords = tf.expand_dims(coords, axis=0)                  # (1, H, W, 2)
+    coords = tf.tile(coords, [batch_size, 1, 1, 1])           # (B, H, W, 2)
+
+    return tf.concat([x, coords], axis=-1)  # Now: (B, H, W, 3)
+
+
 
 
 def build_grid_lane_model(processing_mode):
@@ -162,7 +188,6 @@ def train(processing_mode: str, t_set = None, val_set = None):
         #tf.keras.callbacks.LearningRateScheduler(lr_schedule),
         EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True) #patience usually 10
     ]
-
     model.fit(
         train_ds,
         validation_data=val_ds,

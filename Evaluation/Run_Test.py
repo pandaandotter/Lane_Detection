@@ -41,6 +41,7 @@ def compute_fp_fn_tp_rates_unet(pred_heatmap, label, size, threshold= 0.85):
     false_positives = np.logical_and(pred_binary == 1, true_mask == 0).sum()
     # FN: predicted 0, label 1
     false_negatives = np.logical_and(pred_binary == 0, true_mask == 1).sum()
+    true_negatives = tf.reduce_sum((1.0 - true_mask) * (1.0 - pred_binary))
 
     total_predicted = tf.reduce_sum(tf.cast(pred_binary, tf.float32))
     total_actual = tf.reduce_sum(tf.cast(true_mask, tf.float32))
@@ -49,7 +50,10 @@ def compute_fp_fn_tp_rates_unet(pred_heatmap, label, size, threshold= 0.85):
     fn_rate = false_negatives / (total_actual + 1e-6)
     tp_rate = true_positives / (total_actual + 1e-6)
 
-    return fp_rate, fn_rate, tp_rate
+    total = false_positives + false_negatives + true_negatives + true_positives
+    accuracy = (true_positives + true_negatives) / (total + 1e-6)
+
+    return fp_rate, fn_rate, tp_rate, float(accuracy)
 
 
 def compute_fp_fn_tp_rates_ufdl(prediction, label_dict, size):
@@ -64,6 +68,7 @@ def compute_fp_fn_tp_rates_ufdl(prediction, label_dict, size):
     TP = tf.reduce_sum(true_mask * pred_binary)
     FP = tf.reduce_sum((1.0 - true_mask) * pred_binary)
     FN = tf.reduce_sum(true_mask * (1.0 - pred_binary))
+    TN = tf.reduce_sum((1.0 - true_mask) * (1.0 - pred_binary))
     total_pred = tf.reduce_sum(pred_binary)
     total_actual = tf.reduce_sum(true_mask)
 
@@ -72,7 +77,10 @@ def compute_fp_fn_tp_rates_ufdl(prediction, label_dict, size):
     fp_rate = FP / (total_pred + 1e-6)
     fn_rate = FN / (total_actual + 1e-6)
 
-    return float(fp_rate), float(fn_rate), float(tp_rate)
+    total = TP + TN + FP + FN
+    accuracy = (TP + TN) / (total + 1e-6)
+
+    return float(fp_rate), float(fn_rate), float(tp_rate), float(accuracy)
 
 
 

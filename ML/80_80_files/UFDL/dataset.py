@@ -35,12 +35,21 @@ def sobel_edge_filter(image):
     edge = np.clip(mag, 0, 255).astype(np.uint8)
     return edge
 
-def get_image_file_list(db_location) -> List[str]:
-    return sorted([
+def get_image_file_list(db_location=None) -> List[str]:
+    image_files = sorted([
         os.path.join(get_dataset_paths(db_location)[0], fname)
         for fname in os.listdir(get_dataset_paths(db_location)[0])
-        if fname.endswith(".jpg")
+        if fname.lower().endswith('.jpg')
     ])
+    valid_image_files = []
+    for img_path in image_files:
+        base = os.path.splitext(os.path.basename(img_path))[0]
+        label_path = os.path.join(get_dataset_paths(db_location)[1], f"{base}.json")
+        if os.path.isfile(label_path):
+            valid_image_files.append(img_path)
+
+    print(f"Found {len(valid_image_files)} images with labels")
+    return valid_image_files
 
 def load_label_and_image_pair(image_path: str, processing_mode: str, db_location=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     file_path = image_path.numpy().decode() if hasattr(image_path, 'numpy') else image_path

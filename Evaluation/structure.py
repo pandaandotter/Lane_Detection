@@ -1,7 +1,7 @@
 import tracemalloc
 from timeit import default_timer as timer
 from warnings import catch_warnings
-
+import os
 from Run_Test import compute_fp_fn_tp_rates_unet, compute_fp_fn_tp_rates_ufdl, lane_distance_error, lane_distance_error_unet
 import numpy as np
 from tensorflow.keras.models import load_model
@@ -16,7 +16,7 @@ def train(modelName, type, model_size, train_set, val_set):
 
 def get_training_set(modelName, type, model_size, dataset_path,BATCH_SIZE=8):
     dataset = run_task("dataset", model_size, modelName, type, dataset_path=dataset_path)
-    dataset_size = len(dataset)#cardinality().numpy()
+    dataset_size = dataset.cardinality().numpy()
     train_size = int(dataset_size * 0.8)
     other_size = int(dataset_size * 0.1)
     dataset = dataset.cache()
@@ -74,7 +74,7 @@ def predict(model_test, modelName, img):
         img_tensor = np.expand_dims(img, axis=0)  # (1, 80, 80, 1)
         tracemalloc.clear_traces()
         tracemalloc.start()  # ram_measure_start()
-        outputs = model_test.predict(img)
+        outputs = model_test.predict(img_tensor )
         current, peak = tracemalloc.get_traced_memory()
         start = timer()
         dummmy_predict_for_time = model_test.predict(img_tensor)
@@ -121,27 +121,28 @@ paramsS = ["NO_SOBEL", "SOBEL_BLURRED", "SOBEL_SAMPLED", "SOBEL_MAX", "DUAL"]
 
 models = ["UFDL"]
 preprocessing_type = ["NO_SOBEL"]
-for i in range(10):
+for i in range(3):#(10):
     for modelName in models:
-        for size in [40, 80]: #later [40, 80]
-            for type in preprocessing_type:
-                metrics = {"time": 0, "ram": [0, 0], "FP": 0, "FN": 0, "TP": 0, "Acc": 0, "curve_acc": 0, "modelName": modelName,"preprocessing":preprocessing_type,"size":size}
+        for size in [40]: #later [40, 80]
+            for type in paramsS:
+                metrics = {"time": 0, "ram": [0, 0], "FP": 0, "FN": 0, "TP": 0, "Acc": 0, "curve_acc": 0, "modelName": modelName,"preprocessing":type,"size":size}
                 try:
-                    dataset_path = "C:/Users/adrie/Downloads/Lane_Detection/Datasets/TUSimple"
+                    dataset_path = "C:/Users/adrie/PycharmProjects/Lane_Detection/Datasets/TUSimple"
                     train_set, val_set, test_set = get_training_set(modelName, type, size, dataset_path)
+                    # print(len(train_set), len(val_set), len(test_set))
+                    # test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/UFDL/old_mod/goat.h5"
+                    # test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/U-Net/models/mobilenetv1_80_U-Net_1-no_sobel.h5"
+                    # model = load_model(test_model, compile=False)
+                    # modelName, type, model_size, train_set, val_set
 
-                    #test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/UFDL/old_mod/goat.h5"
-                    test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/U-Net/models/mobilenetv1_80_U-Net_1-no_sobel.h5"
-                    #model = load_model(test_model, compile=False)
-                    #modelName, type, model_size, train_set, val_set
-                    model = train(modelName, type, size, train_set, val_set) # TODO : make code work with custom train set and val_set
+                    model = train(modelName, type, size, train_set, val_set)
 
-                    for img, label in train_set:
+                    for img, label in test_set:
 
                         #preprocess(img, type) # TODO: or not because it's already done in the databese creation? is considered cheating?
 
                         prediction, ram, time = predict(model, modelName, img)
-                        FP, FN, TP = accuracy(prediction, label, size, modelName)
+                        FP, FN, TP, acc = accuracy(prediction, label, size, modelName)
                         curve_acc = curve_accuracy(prediction, label, size)
 
                         metrics["time"]+=time
@@ -151,6 +152,7 @@ for i in range(10):
                         metrics["FN"] += FN
                         metrics["TP"] += TP
                         metrics["curve_acc"] += curve_acc
+                        metrics["Acc"] += acc
                         #print("Used ram avg:", ram[0] / 1024, ", max:", ram[1] / 1024,"KB")
 
 
@@ -158,9 +160,25 @@ for i in range(10):
                     print("Average time:", metrics["time"]/len(train_set))
                     print("FP:", metrics["FP"]/len(train_set), " , FN:", metrics["FN"]/len(train_set), " , TP:", metrics["TP"]/len(train_set))
                     print("Curve error:", metrics["curve_acc"]/len(train_set))
+
+                    metrics["time"] /= len(train_set)
+                    metrics["ram"][0] /= len(train_set)
+                    metrics["ram"][1] /= len(train_set)
+                    metrics["ram"][0] /=  1024
+                    metrics["ram"][1] /=  1024
+                    metrics["FP"] /= len(train_set)
+                    metrics["FN"] /= len(train_set)
+                    metrics["TP"] /= len(train_set)
+                    metrics["curve_acc"] /= len(train_set)
+                    metrics["Acc"] /= len(train_set)
+
                     try:
-                        with open('C:/Users/adrie/Downloads/Lane_Detection/Evaluation/data.csv', 'a', newline='') as file:
-                            writer = csv.writer(file)
+                        csv_path = 'C:/Users/adrie/PycharmProjects/Lane_Detection/Evaluation/data.csv'
+                        file_exists = os.path.isfile(csv_path)
+                        with open(csv_path, 'a', newline='') as file:
+                            writer = csv.DictWriter(file, fieldnames=metrics.keys())
+                            if not file_exists:
+                                writer.writeheader()  # write header only if file is new
                             writer.writerow(metrics)
                     except:
                         print("error saving csv:",metrics)

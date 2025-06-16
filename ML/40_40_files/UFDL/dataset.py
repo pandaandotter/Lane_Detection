@@ -26,12 +26,27 @@ def get_dataset_paths(db_location=None):
 
 
 def get_image_file_list(db_location=None) -> List[str]:
+    image_files = sorted([
+        os.path.join(get_dataset_paths(db_location)[0], fname)
+        for fname in os.listdir(get_dataset_paths(db_location)[0])
+        if fname.lower().endswith('.jpg')
+    ])
+    valid_image_files = []
+    for img_path in image_files:
+        base = os.path.splitext(os.path.basename(img_path))[0]
+        label_path = os.path.join(get_dataset_paths(db_location)[1], f"{base}.json")
+        if os.path.isfile(label_path):
+            valid_image_files.append(img_path)
+
+    print(f"Found {len(valid_image_files)} images with labels")
+    return valid_image_files
+"""
     return sorted([
         os.path.join(get_dataset_paths(db_location)[0], fname)
         for fname in os.listdir(get_dataset_paths(db_location)[0])
         if fname.lower().endswith('.jpg')
     ])
-
+"""
 # ------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------
@@ -75,9 +90,6 @@ def load_label_and_image_pair(image_path: str, processing_mode: str,
     file_path = image_path.numpy().decode() if hasattr(image_path, 'numpy') else image_path
     file_name = os.path.splitext(os.path.basename(file_path))[0]
 
-    # --------------------------------------------------------
-    # 1️⃣ Read and centre‑crop 80×80 from 320×… frame
-    # --------------------------------------------------------
     img80 = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
     if img80 is None:
         raise FileNotFoundError(f"Image not found: {file_path}")
@@ -86,9 +98,7 @@ def load_label_and_image_pair(image_path: str, processing_mode: str,
     # Always create no‑Sobel branch (average pooled 40×40)
     img_no_sobel = downsample_2x2_average(img80.copy())
 
-    # --------------------------------------------------------
-    # 2️⃣ Build gray channel according to processing_mode
-    # --------------------------------------------------------
+
     if processing_mode == "NO_SOBEL":
         gray = downsample_2x2_average(img80.copy())
 
@@ -183,12 +193,15 @@ def create_dataset40(processing_mode: str,
     img_files = get_image_file_list(DB_location)
     dataset = tf.data.Dataset.from_tensor_slices(img_files)
     dataset = dataset.map(tf_wrapper, num_parallel_calls=tf.data.AUTOTUNE)
-    if batch_size:
-        dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return dataset, "fooooooooooool"
 
+"""
 if __name__ == "__main__":  # pragma: no cover
     # quick smoke‑test
     ds = create_dataset40("DUAL", batch_size=1)
     for img, tgt in ds.take(1):
         print(img.shape, tgt['lane_exist'].shape)
+"""
+def main(processing_mode: str, DB_location:str =None):
+    a, _ = create_dataset40(processing_mode, DB_location=DB_location)
+    return a
