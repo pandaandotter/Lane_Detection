@@ -67,8 +67,10 @@ def build_grid_lane_model(processing_mode):
 
     lane_exist = layers.Dense(NUM_LANES * NUM_POINTS, activation='sigmoid', name='lane_exist')(x)
 
-    lane_pos_logits = layers.Dense(NUM_ROWS * NUM_COLS)(x)
-    lane_pos = layers.Reshape((NUM_ROWS, NUM_COLS))(lane_pos_logits)
+    #lane_pos_logits = layers.Dense(NUM_ROWS * NUM_COLS)(x)
+    #lane_pos = layers.Reshape((NUM_ROWS, NUM_COLS))(lane_pos_logits)
+    lane_pos_logits = layers.Dense(NUM_LANES * NUM_POINTS * NUM_COLS)(x)
+    lane_pos = layers.Reshape((NUM_LANES * NUM_POINTS, NUM_COLS))(lane_pos_logits)
     lane_pos = layers.Softmax(axis=-1, name='lane_pos')(lane_pos)
 
     return models.Model(inputs=inputs, outputs={'lane_pos': lane_pos, 'lane_exist': lane_exist})
@@ -169,10 +171,10 @@ def train(processing_mode: str, t_set = None, val_set = None):
     )
 
     #model = tfmot.sparsity.keras.strip_pruning(model)
-    if t_set is None:
-        save_path = f'40_40_files/UFDL/models/UFDL_{processing_mode.lower()}.h5'
-        model.save(save_path)
-        print(f"Pruned model saved to: {save_path}")
+
+    save_path = f'40_40_files/UFDL/models/UFDL_2_{processing_mode.lower()}.h5'
+    model.save(save_path)
+    print(f"Pruned model saved to: {save_path}")
     return model
 
 

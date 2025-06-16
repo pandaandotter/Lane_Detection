@@ -14,7 +14,7 @@ import csv
 def train(modelName, type, model_size, train_set, val_set):
     return run_task("train", model_size, modelName, type, train_set=train_set,val_set=val_set)
 
-def get_training_set(modelName, type, model_size, dataset_path):
+def get_training_set(modelName, type, model_size, dataset_path,BATCH_SIZE=8):
     dataset = run_task("dataset", model_size, modelName, type, dataset_path=dataset_path)
     dataset_size = len(dataset)#cardinality().numpy()
     train_size = int(dataset_size * 0.8)
@@ -23,6 +23,14 @@ def get_training_set(modelName, type, model_size, dataset_path):
     train_ds = dataset.take(train_size)
     val_ds = dataset.skip(train_size).take(other_size)
     test_ds = dataset.skip(train_size + other_size)
+    train_ds = (train_ds
+                .shuffle(train_size)  # always shuffle training
+                .batch(BATCH_SIZE)
+                .prefetch(tf.data.AUTOTUNE))
+
+    val_ds = (val_ds
+              .batch(BATCH_SIZE)
+              .prefetch(tf.data.AUTOTUNE))
 
     return train_ds, val_ds, test_ds
 
@@ -114,7 +122,6 @@ paramsS = ["NO_SOBEL", "SOBEL_BLURRED", "SOBEL_SAMPLED", "SOBEL_MAX", "DUAL"]
 models = ["UFDL"]
 preprocessing_type = ["NO_SOBEL"]
 for i in range(10):
-
     for modelName in models:
         for size in [40, 80]: #later [40, 80]
             for type in preprocessing_type:
@@ -125,8 +132,9 @@ for i in range(10):
 
                     #test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/UFDL/old_mod/goat.h5"
                     test_model = "C:/Users/adrie/PycharmProjects/LaneFinder1/TuSimple/80_80_files/U-Net/models/mobilenetv1_80_U-Net_1-no_sobel.h5"
-                    model = load_model(test_model, compile=False)
-                    #model = train(modelName, type, train_set, val_set) # TODO : make code work with custom train set and val_set
+                    #model = load_model(test_model, compile=False)
+                    #modelName, type, model_size, train_set, val_set
+                    model = train(modelName, type, size, train_set, val_set) # TODO : make code work with custom train set and val_set
 
                     for img, label in train_set:
 
@@ -157,5 +165,6 @@ for i in range(10):
                     except:
                         print("error saving csv:",metrics)
 
-                except:
+                except Exception as e:
+                    print(e)
                     print("error occured", metrics)
